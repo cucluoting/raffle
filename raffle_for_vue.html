@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Raffle - Vue.js</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <style type="text/css">
+    *{box-sizing: border-box;}
+    html,body,button,textarea,h1,h2,h3{margin: 0;padding: 0;outline: none;}
+    html,body{height: 100%;-webkit-tap-highlight-color: transparent;}
+    body{font-family: "Helvetica Neue",Helvetica,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","微软雅黑",Arial,sans-serif;color: #666;font-size: 14px;line-height: 1.2;}
+    button{border: none;background: transparent;font-size: 14px;cursor: pointer;}
+    textarea{overflow: auto;resize: none;}
+    .hide{display: none !important;}
+    .bodyWrap{display: flex;flex-direction: column;align-items: center;height:100%;}
+    .contentWrap{flex: 1;display: flex;flex-direction: column;justify-content: center;width: 75%;}
+    .resultBox{height: 100px;line-height: 100px;margin: 20px 0;text-align: center;border-radius: 2px;border: 2px solid #fa7d3c;font-size: 36px;font-weight: 500;}
+    .title{text-align: center;letter-spacing: 8px;font-size: 36px;color: #df3e3e;}
+    .btnGroup{margin-bottom: 20px;display: flex;}
+    .controlBtn,.resetBtn{padding: 10px;font-size: 14px;border-radius: 4px;color: #fff;background-color: #ff8140;transition: background-color .2s;}
+    .controlBtn:not(:disabled):hover,.controlBtn:not(:disabled):active,.resetBtn:hover,.resetBtn:active{background-color: #f77c3d;}
+    .controlBtn:disabled{opacity: .65;cursor: default;}
+    .controlBtn{flex: 1;}
+    .resetBtn{margin-left: 10px;}
+    .winnerListLabel{display: inline-block;font-size: 14px;color: #333;}
+    .textBtn{align-self: flex-end;margin-right: 12.5%;padding: 10px 0 10px 10px;color: #fa7d3c;}
+
+    .modalWrap:before{content: '';position: fixed;top: 0;right: 0;bottom: 0;left: 0;background: rgba(0,0,0,.6);}
+    .modalBody{position: fixed;top: 50%;left: 50%;transform: translate(-50%, -50%);width: 75%;background: #fff;border-radius: 2px;z-index: 100;}
+    .modalContent{padding: 20px;}
+    .modalFooter{display: flex;height: 40px;line-height: 40px;border-top: 1px solid rgba(0,0,0,.16);}
+    .modalBtn{flex: 1;}
+    .modalCancelBtn{color: #333;border-right: 1px solid rgba(0,0,0,.16);}
+    .modalConfirmBtn{color: #fa7d3c;}
+    .modalInput{display: block;width: 100%;padding: 5px;font-size: 14px;line-height: 1.5;background-color: #f5f5f5;border: none;border-radius: 2px;}
+    .modalContentLabel{margin-bottom: 10px;font-size: 14px;font-weight: normal;}
+    .errorMsg{display: inline-block;margin-top: 5px;color: #FF3366;font-size: 12px;}
+  </style>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script> -->
+  <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+</head>
+<body>
+  <script type="text/x-template" id="modal-template">
+    <div class="modalWrap">
+      <div class="modalBody">
+        <div class="modalContent">
+          <h3 class="modalContentLabel">请输入参与人员(使用','或'，'分隔)</h3>
+          <textarea v-model="inputVal" rows="6" class="modalInput"></textarea>
+          <span class="errorMsg" v-if="errorMsg">{{ errorMsg }}</span>
+        </div>
+        <div class="modalFooter">
+          <button class="modalBtn modalCancelBtn" @click="cancel">取消</button>
+          <button class="modalBtn modalConfirmBtn" @click="confirm">确定</button>
+        </div>
+      </div>
+    </div>
+  </script>
+
+  <div class="bodyWrap" id="app">
+    <section class="contentWrap">
+      <h1 class="title">抽奖啦</h1>
+      <div class="resultBox">{{ currWinner || '???' }}</div>
+      <div class="btnGroup">
+        <button class="controlBtn" :disabled="isDisabledBtn" @click="handleClickController">{{ controlBtnText }}</button>
+        <button class="resetBtn" @click="reset">重新开始</button>
+      </div>
+      <h2 class="winnerListLabel">中奖名单：(最多可抽取三名)</h2>
+      <p class="winnerList">{{ displayWinnerList }}</p>
+    </section>
+    <button class="textBtn" @click="showModal = true">参与抽奖人员</button>
+    <modal
+      v-if="showModal"
+      :candidates.sync="candidates"
+      :winner-count="winnerCount"
+      @close="showModal = false">
+    </modal>
+  </div>
+
+  <script type="text/javascript">
+    const winnerCount = 3
+    const candidates = ["尤雨溪", "贺师俊", "徐飞", "司徒正美", "顾轶灵", "Cat Chen", "winter", "貘吃馍香", "张云龙", "小爝", "sofish", "当耐特", "kejunz", "林峰", "张鑫旭", "勾三股四", "一丝"]
+
+    Vue.component('modal', {
+      props: ['candidates', 'winnerCount'],
+      data() {
+        return {
+          inputVal: this.candidates.join(','),
+          errorMsg: ''
+        }
+      },
+      methods: {
+        getUnique(arr) {
+          return [...new Set(arr)]
+        },
+        confirm() {
+          const val = this.inputVal
+          // 将输入值转换成数组，清除无效元素和空白符，使得数组不存在重复元素
+          const tempCandidates = this.getUnique(val.trim().split(/\s*(?:,|，)\s*/).filter(function(name) { return name }))
+          if (tempCandidates.length < this.winnerCount) {
+            this.errorMsg = '请输入三位以上不重复的人员'
+          } else {
+            this.$emit('update:candidates', tempCandidates)
+            this.$emit('close')
+            this.errorMsg = ''
+          }
+        },
+        cancel() {
+          this.$emit('close')
+          this.inputVal = this.candidates.join(',')
+          this.errorMsg = ''
+        }
+      },
+      template: '#modal-template'
+    })
+    new Vue({
+      el: '#app',
+      data: {
+        winnerCount: winnerCount,
+        candidates: candidates,
+        nonWinningList: candidates.slice(),
+        winnerList: [],
+        currWinner: '',
+        randomIndex: NaN,
+        showModal: false,
+        timer: null,
+        controlBtnText: '开始'
+      },
+      computed: {
+        displayWinnerList() {
+          const winnerList = this.winnerList
+          return winnerList.length > 0 ? winnerList.join(',') : '暂无'
+        },
+        isDisabledBtn() {
+          return this.winnerList.length === this.winnerCount
+        }
+      },
+      watch: {
+        candidates(val) {
+          this.reset()
+        }
+      },
+      methods: {
+        getRandomInt(min, max) {
+          return Math.round(Math.random() * (max - min))
+        },
+        reset() {
+          clearInterval(this.timer)
+          this.timer = null
+          this.randomIndex = NaN
+          this.winnerList = []
+          this.nonWinningList = this.candidates.slice()
+          this.currWinner = ''
+          this.controlBtnText = '开始'
+        },
+        handleClickController() {
+          if (this.controlBtnText === '开始') {
+            if (this.winnerList.length === this.winnerCount) return
+            this.controlBtnText = '停止'
+            this.start()
+          } else {
+            this.controlBtnText = '开始'
+            this.end()
+          }
+        },
+        start() {
+          this.timer = setInterval(() => {
+            this.randomIndex = this.getRandomInt(0, this.nonWinningList.length - 1)
+            this.currWinner = this.nonWinningList[this.randomIndex]
+          }, 60)
+        },
+        end() {
+          clearInterval(this.timer)
+          this.winnerList.push(this.nonWinningList.splice(this.randomIndex, 1)[0])
+        }
+      }
+    })
+  </script>
+</body>
+</html>
