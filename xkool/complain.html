@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>吐槽池</title>
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"
+    />
+    <style type="text/css">
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body,
+      button,
+      textarea,
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        padding: 0;
+        outline: none;
+      }
+      html,
+      body {
+        height: 100%;
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        font-family: 'Helvetica Neue', Helvetica, 'PingFang SC',
+          'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+        color: #666;
+        font-size: 14px;
+        line-height: 1.2;
+      }
+      button {
+        border: none;
+        background: transparent;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      textarea {
+        overflow: auto;
+        resize: none;
+      }
+      .hide {
+        display: none !important;
+      }
+      .bodyWrap {
+        position: relative;
+        height: 100%;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: contain;
+      }
+      .bodyWrap0 {
+        background-image: url('./complain.jpg');
+      }
+      .contentWrap {
+        position: absolute;
+        bottom: 20px;
+        right: 15%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        width: 35%;
+      }
+      .resultBox {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 200px;
+        margin: 20px 0;
+        padding: 10px;
+        border-radius: 2px;
+        border: 2px solid #000000;
+        font-size: 18px;
+        font-weight: 500;
+        background-color: rgba(255, 255, 255, 0.6);
+      }
+      .title {
+        text-align: center;
+        letter-spacing: 8px;
+        font-size: 36px;
+        color: #df3e3e;
+      }
+      .btnGroup {
+        position: absolute;
+        top: 15%;
+        right: 20%;
+        /* margin-bottom: 20px; */
+        /* display: flex; */
+      }
+      .controlBtn,
+      .resetBtn {
+        padding: 10px;
+        font-size: 14px;
+        border-radius: 4px;
+        color: rgba(255, 255, 255, 0);
+        transition: background-color 0.2s;
+      }
+      .controlBtn:not(:disabled):hover,
+      .controlBtn:not(:disabled):active,
+      .resetBtn:hover,
+      .resetBtn:active {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+      .controlBtn:disabled {
+        opacity: 0.65;
+        cursor: default;
+      }
+      .controlBtn {
+        /* flex: 1; */
+        height: 200px;
+        width: 400px;
+      }
+      .resetBtn {
+        margin-left: 10px;
+      }
+      .winnerListWrap {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        margin-left: 15%;
+        padding: 10px 0 10px 10px;
+      }
+      .winnerListLabel {
+        display: inline-block;
+        padding-right: 10px;
+        font-size: 14px;
+        color: #333;
+      }
+      .winnerList {
+        display: inline;
+      }
+      .textBtn {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        margin-right: 15%;
+        padding: 10px 0 10px 10px;
+        color: #000000;
+      }
+      .modalWrap:before {
+        content: '';
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background: rgba(0, 0, 0, 0.6);
+      }
+      .modalBody {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 75%;
+        background: #fff;
+        border-radius: 2px;
+        z-index: 100;
+      }
+      .modalContent {
+        padding: 20px;
+      }
+      .modalFooter {
+        display: flex;
+        height: 40px;
+        line-height: 40px;
+        border-top: 1px solid rgba(0, 0, 0, 0.16);
+      }
+      .modalBtn {
+        flex: 1;
+      }
+      .modalCancelBtn {
+        color: #333;
+        border-right: 1px solid rgba(0, 0, 0, 0.16);
+      }
+      .modalConfirmBtn {
+        color: #000000;
+      }
+      .modalInput {
+        display: block;
+        width: 100%;
+        padding: 5px;
+        font-size: 14px;
+        line-height: 1.5;
+        background-color: #f5f5f5;
+        border: none;
+        border-radius: 2px;
+      }
+      .modalContentLabel {
+        margin-bottom: 10px;
+        font-size: 14px;
+        font-weight: normal;
+      }
+      .errorMsg {
+        display: inline-block;
+        margin-top: 5px;
+        color: #ff3366;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="text/javascript">
+      // 跟dom操作有关的函数
+      const Dom = {
+        createElement(rootType, className, content) {
+          const ele = document.createElement(rootType);
+          ele.className = className;
+          ele.innerHTML = content;
+          return ele;
+        },
+        findChild(parentEle, className, index = 0) {
+          return parentEle.getElementsByClassName(className)[index];
+        },
+        display(ele) {
+          ele.className = ele.className.replace('hide', '').trim();
+        },
+        hide(ele) {
+          const className = ele.className;
+          ele.className = className.length > 0 ? className + ' hide' : 'hide';
+        },
+        updateContent(ele, content) {
+          if (ele) {
+            ele.textContent = content;
+          }
+        },
+        updateValue(ele, value) {
+          ele.value = value;
+        }
+      };
+      // 编辑抽奖人员弹窗
+      class Modal {
+        constructor(initialState, confirmFn) {
+          const { winnerCount, candidates } = initialState;
+          this.state = {
+            candidates: candidates.slice(),
+            winnerCount
+          };
+          this.confirmFn = confirmFn;
+
+          this.el = Dom.createElement(
+            'div',
+            'modalWrap hide',
+            `
+                <div class="modalBody">
+                  <div class="modalContent">
+                    <h3 class="modalContentLabel">请输入参与人员(使用','或'，'分隔)</h3>
+                    <textarea name="candidates" rows="6" class="modalInput">${candidates.join(
+                      ','
+                    )}</textarea>
+                    <span class="errorMsg hide"></span>
+                  </div>
+                  <div class="modalFooter">
+                    <button class="modalBtn modalCancelBtn">取消</button>
+                    <button class="modalBtn modalConfirmBtn">确定</button>
+                  </div>
+                </div>
+              `
+          );
+
+          // 缓存dom节点
+          this.inputEl = Dom.findChild(this.el, 'modalInput');
+          this.errorMsgEl = Dom.findChild(this.el, 'errorMsg');
+
+          this._bindEvent();
+        }
+        _bindEvent() {
+          const cancelBtnEl = Dom.findChild(this.el, 'modalCancelBtn');
+          const confirmBtnEl = Dom.findChild(this.el, 'modalConfirmBtn');
+
+          cancelBtnEl.addEventListener('click', () => this._cancel());
+          confirmBtnEl.addEventListener('click', () => this._confirm());
+        }
+        _getUnique(arr) {
+          return [...new Set(arr)];
+        }
+        _cancel() {
+          Dom.hide(this.el);
+          Dom.updateValue(this.inputEl, this.state.candidates.join(','));
+          Dom.updateContent(this.errorMsgEl, '');
+        }
+        _confirm() {
+          const val = this.inputEl.value;
+          // 将输入值转换成数组，清除无效元素和空白符，使得数组不存在重复元素
+          const tempCandidates = this._getUnique(
+            val
+              .trim()
+              .split(/\s*(?:,|，)\s*/)
+              .filter(function(name) {
+                return name;
+              })
+          );
+          if (tempCandidates.length < this.state.winnerCount) {
+            this._updateErrorMsg('请输入三位以上不重复的人员');
+          } else {
+            this.confirmFn(tempCandidates);
+            Dom.hide(this.el);
+            this._updateErrorMsg('');
+          }
+        }
+        _updateErrorMsg(content) {
+          if (content.length > 0) {
+            Dom.updateContent(this.errorMsgEl, content);
+            Dom.display(this.errorMsgEl);
+          } else {
+            Dom.hide(this.errorMsgEl);
+          }
+        }
+        appendTo(parentEle) {
+          parentEle.appendChild(this.el);
+        }
+        show() {
+          Dom.display(this.el);
+        }
+      }
+      class RaffleMachine {
+        constructor(initialState) {
+          const { winnerCount, candidates, index } = initialState;
+          this.state = {
+            index,
+            winnerCount,
+            candidates: candidates.slice(),
+            nonWinningList: candidates,
+            winnerList: [],
+            randomIndex: NaN,
+            timer: null
+          };
+
+          this.el = Dom.createElement(
+            'div',
+            `bodyWrap bodyWrap${this.state.index}`,
+            `
+                <section class="contentWrap">
+                  <h1 class="title"></h1>
+                  <div class="resultBox">？？？</div>
+                </section>
+                <div class="btnGroup">
+                  <button class="controlBtn">开始</button>
+                </div>
+                <button class="textBtn">吐槽池</button>
+              `
+          );
+          this.modal = new Modal({ winnerCount, candidates }, val =>
+            this._updateCandidates(val)
+          );
+          this.modal.appendTo(this.el);
+
+          // 缓存dom节点
+          this.winnerEl = Dom.findChild(this.el, 'resultBox', this.index);
+          this.winnerListEl = Dom.findChild(this.el, 'winnerList', this.index);
+          this.winnerControlBtnEl = Dom.findChild(
+            this.el,
+            'controlBtn',
+            this.index
+          );
+
+          this._bindEvent();
+        }
+        _bindEvent() {
+          const launchModalBtnEl = Dom.findChild(
+            this.el,
+            'textBtn',
+            this.index
+          );
+          const winnerControlBtnEl = Dom.findChild(
+            this.el,
+            'controlBtn',
+            this.index
+          );
+          const resetBtnEl = Dom.findChild(this.el, 'resetBtn', this.index);
+
+          launchModalBtnEl.addEventListener('click', () =>
+            this._displayModal()
+          );
+          winnerControlBtnEl.addEventListener('click', () =>
+            this._handleClickController()
+          );
+          if (resetBtnEl) {
+            resetBtnEl.addEventListener('click', () => this._reset());
+          }
+        }
+        _updateCandidates(val) {
+          this.state.candidates = val;
+          this._reset();
+        }
+        _reset() {
+          const state = this.state;
+          clearInterval(state.timer);
+          state.timer = null;
+          state.winnerList = [];
+          state.nonWinningList = state.candidates.slice();
+          state.randomIndex = NaN;
+
+          Dom.updateContent(this.winnerEl, '???');
+          Dom.updateContent(this.winnerListEl, '暂无');
+          Dom.updateContent(this.winnerControlBtnEl, '开始');
+          this.winnerControlBtnEl.disabled = false;
+        }
+        _displayModal() {
+          this.modal.show();
+        }
+        _handleClickController() {
+          const state = this.state;
+          if (this.winnerControlBtnEl.textContent === '开始') {
+            if (state.winnerList.length === state.winnerCount) return;
+            Dom.updateContent(this.winnerControlBtnEl, '停止');
+            this._start();
+          } else {
+            Dom.updateContent(this.winnerControlBtnEl, '开始');
+            this._pause();
+          }
+        }
+        _getRandomInt(min, max) {
+          return Math.round(Math.random() * (max - min));
+        }
+        _start() {
+          const state = this.state;
+          state.timer = setInterval(() => {
+            // 从未中奖人数组里选取一个随机值
+            state.randomIndex = this._getRandomInt(
+              0,
+              state.nonWinningList.length - 1
+            );
+            Dom.updateContent(
+              this.winnerEl,
+              state.nonWinningList[state.randomIndex]
+            );
+          }, 60);
+        }
+        _pause() {
+          const state = this.state;
+          clearInterval(state.timer);
+          state.winnerList.push(
+            state.nonWinningList.splice(state.randomIndex, 1)[0]
+          );
+
+          Dom.updateContent(this.winnerListEl, state.winnerList.join(','));
+          if (state.winnerList.length === state.winnerCount) {
+            this.winnerControlBtnEl.disabled = true;
+          }
+        }
+        appendTo(parentEle) {
+          parentEle.appendChild(this.el);
+        }
+      }
+      const candidates = [
+        '有问题时容易互相甩锅，而不是找问题原因和解决问题',
+        '同一个问题多次出现',
+        '需求不明确时，没有及时反馈或者开发完毕以后才发现需求不明确或者理解不一致',
+        '男厕马桶和小便池老是堵',
+        '需求很多时候都太不明确了呀，我慢慢确认需求要花很多时间反复去问，问多了我怕人家以为我是个憨憨，问少了活怎么干都是错',
+        '各部门工作互相不够了解，不知道各自在做什么，缺乏理解',
+        '会议总是：迟到就迟到 缺席就缺席 推迟就推迟 改期就改期',
+        '职能划分明确点呀',
+        'wifi超级差的',
+        '合伙人做决策时需要谨慎考虑，因为管理者话会被放大',
+        '请让专业的人做专业的事',
+        '各个部门之间基本没什么联系，弄点活动加强交流呗',
+        '男厕的马桶',
+        '男厕有人抽烟',
+        '男厕便池坏了三个月没人修',
+        '厕所不好用，太难了',
+        '男厕所居然有人踩马桶',
+        '厕所门坏了，好怕有人直接冲进来',
+        '一切都挺好',
+        '挺好的',
+        '公司福利有点少',
+        '同事关系很冷淡，都只聊工作',
+        '能多组织点活动吗',
+        '我说我来背锅就客套一下，真的真的把自己本地环境搞清楚了再来问我好嘛',
+        '离家太远啦',
+        '挺开心的',
+        '团建内容及时间不够完整，没有达到增进感情的效果！',
+        '公司大部分事情决定太过拖沓，预留时间太少。',
+        '对待年会节目表演态度松散，没有思想觉悟。',
+        '期望项目流程管理可以更专业',
+        '日常组织活动可以更多一点哦',
+        '其他挺好啦，小库加油',
+        '没有公款旅游',
+        '钱少',
+        '指导少',
+        '底薪…太低？？？',
+        '其他的…都挺好…',
+        '夏天蹲坑真的热',
+        '希望留住小库最初的状态',
+        '给予真正的信任',
+        '顺便换俩不容易堵的马桶',
+        '重复性的文书制作，例如OKR，review，述职，这些东西明明可以通过软件来记录和跟踪。',
+        '公司太抠，很多时候一味的减少支出，导致不必要的二次维护，二次招聘，二次采购等等。钱就是要花在都刀口上的。',
+        '有时候更方便且简易的行政流程，远比被刻意包装的节日活动来的更贴心。',
+        '气氛跟18年的时候差很多，少了一些和乐融融跟自由度',
+        '加班变成常态，事情做完也沒人敢准时走，上班氛围紧绷',
+        '男厕小便池老是堵塞',
+        '马桶经常堵',
+        '零食不好吃',
+        '活动有点少',
+        '地址位置不好找',
+        '事情多#人手少',
+        '男厕的窗户贴下玻璃纸8'
+      ];
+      const raffleMachineObj0 = new RaffleMachine({
+        index: 0,
+        winnerCount: 100,
+        candidates
+      });
+      raffleMachineObj0.appendTo(document.body);
+    </script>
+  </body>
+</html>
