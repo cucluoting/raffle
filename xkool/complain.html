@@ -75,8 +75,9 @@
         padding: 10px;
         border-radius: 2px;
         /* border: 2px solid #000000; */
-        font-size: 18px;
-        font-weight: 500;
+        font-size: 36px;
+        font-weight: bold;
+        color: #000000;
         /* background-color: rgba(255, 255, 255, 0.6); */
       }
       .title {
@@ -87,8 +88,8 @@
       }
       .btnGroup {
         position: absolute;
-        bottom: 0;
-        right: 0;
+        bottom: 10px;
+        right: 15%;
         /* margin-bottom: 20px; */
         /* display: flex; */
       }
@@ -112,8 +113,10 @@
       }
       .controlBtn {
         /* flex: 1; */
-        height: 200px;
-        width: 400px;
+        height: 120px;
+        width: 120px;
+        background-size: contain;
+        background-image: url('./complain-btn.png');
       }
       .resetBtn {
         margin-left: 10px;
@@ -341,7 +344,7 @@
                 <div class="btnGroup">
                   <button class="controlBtn">开始</button>
                 </div>
-                <button class="textBtn">吐槽池</button>
+                <button class="textBtn"></button>
               `
           );
           this.modal = new Modal({ winnerCount, candidates }, val =>
